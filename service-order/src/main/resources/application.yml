@@ -1,0 +1,40 @@
+server:
+  port: 7002
+
+spring:
+  application:
+    name: service-order
+
+# Seata 配置
+seata:
+  enabled: true
+  access-key: seata
+  secret-key: SeataSecretKey0c382ef121d778043159209298fd40bf3850a017
+  application-id: seata-server
+  enable-auto-data-source-proxy: false    # 是否启用数据源bean的自动代理
+  tx-service-group: default_tx_group
+  service:
+    disable-global-transaction: false
+    vgroup-mapping:
+      default_tx_group: default
+  client:
+    rm:
+      report-success-enable: true  # 是否上报成功状态
+      report-retry-count: 3   # 重试次数
+  registry:
+    type: nacos
+    nacos:
+      server-addr: localhost:8848
+      namespace: f58a1bf4-7ad9-483b-a3f5-5b1b0be32ea7
+      application: seata-server
+      group: SEATA_GROUP
+      username: nacos
+      password: nacos
+  config:
+    type: nacos
+    nacos:
+      server-addr: localhost:8848
+      namespace: f58a1bf4-7ad9-483b-a3f5-5b1b0be32ea7
+      group: SEATA_GROUP
+      username: nacos
+      password: nacos
