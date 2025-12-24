@@ -1,5 +1,6 @@
 package com.hz.voa;
 
+import io.seata.spring.annotation.datasource.EnableAutoDataSourceProxy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -19,6 +20,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @EnableAsync
 @EnableDiscoveryClient
 @EnableFeignClients
+@EnableAutoDataSourceProxy
 @SpringBootApplication
 public class OrderApplication implements CommandLineRunner {
 

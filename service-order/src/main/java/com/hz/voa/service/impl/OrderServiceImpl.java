@@ -4,6 +4,7 @@ import cn.hutool.core.util.IdUtil;
 import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hz.voa.entity.Order;
+import com.hz.voa.mapper.UndoLogMapper;
 import com.hz.voa.pojo.OrderVO;
 import com.hz.voa.feign.WmsService;
 import com.hz.voa.mapper.OrderMapper;
@@ -32,54 +33,68 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     @Resource
     OrderMapper orderMapper;
 
+    @Resource
+    UndoLogMapper undoLogMapper;
+
     @Override
     @GlobalTransactional(rollbackFor = Exception.class)
     public OrderVO create(String userId, String commodityCode, int orderCount) {
-        Order order = new Order();
-        order.setUserId(userId);
-        order.setItemId(commodityCode);
-        order.setNum(orderCount);
-        order.setPrice(new BigDecimal(50));
-        order.setCouponPrice(new BigDecimal(2));
-        order.setTotalPrice(order.getPrice().multiply(new BigDecimal(order.getNum())).subtract(order.getCouponPrice()));
+        Order orderDomain = new Order();
+        orderDomain.setUserId(userId);
+        orderDomain.setItemId(commodityCode);
+        orderDomain.setNum(orderCount);
+        orderDomain.setPrice(new BigDecimal(50));
+        orderDomain.setCouponPrice(new BigDecimal(2));
+        orderDomain.setTotalPrice(orderDomain.getPrice().multiply(new BigDecimal(orderDomain.getNum())).subtract(orderDomain.getCouponPrice()));
         String orderNo = IdUtil.fastSimpleUUID();
-        order.setOrderNo(orderNo);
+        orderDomain.setOrderNo(orderNo);
 
-        int count = orderMapper.insert(order);
-        Order saveOrder = null;
+        log.info("[order插入前] undo_log.count:{} ",undoLogCount());
+
+        int count = orderMapper.insert(orderDomain);
+        Order saveOrderDomain = null;
         if(count>0){
-            saveOrder = new LambdaQueryChainWrapper<>(this.baseMapper)
+            saveOrderDomain = new LambdaQueryChainWrapper<>(this.baseMapper)
                     .eq(Order::getOrderNo, orderNo).one();
         }
 
+        log.info("[order插入后] undo_log.count:{} ",undoLogCount());
+
+        // 这里设计异常，测试当前服务的回滚
         wmsService.deduct(commodityCode, orderCount);
 
-        return saveOrder!=null ? OrderMapping.INSTANCE.toVo(saveOrder) : null;
+        log.info("[wms执行后] undo_log.count:{} ",undoLogCount());
+
+        if (orderCount==8){
+            throw new RuntimeException("主动异常：全局回滚");
+        }
+
+        return saveOrderDomain !=null ? OrderMapping.INSTANCE.toVo(saveOrderDomain) : null;
     }
 
     @TwoPhaseBusinessAction(name = "tryOrder", commitMethod = "confirmOrder", rollbackMethod = "cancelOrder")
     @Override
     public OrderVO tryCreate(String userId, String commodityCode, int orderCount) {
-        Order order = new Order();
-        order.setUserId(userId);
-        order.setItemId(commodityCode);
-        order.setNum(orderCount);
-        order.setPrice(new BigDecimal(50));
-        order.setCouponPrice(new BigDecimal(2));
-        order.setTotalPrice(order.getPrice().multiply(new BigDecimal(order.getNum())).subtract(order.getCouponPrice()));
+        Order orderDomain = new Order();
+        orderDomain.setUserId(userId);
+        orderDomain.setItemId(commodityCode);
+        orderDomain.setNum(orderCount);
+        orderDomain.setPrice(new BigDecimal(50));
+        orderDomain.setCouponPrice(new BigDecimal(2));
+        orderDomain.setTotalPrice(orderDomain.getPrice().multiply(new BigDecimal(orderDomain.getNum())).subtract(orderDomain.getCouponPrice()));
         String orderNo = IdUtil.fastSimpleUUID();
-        order.setOrderNo(orderNo);
+        orderDomain.setOrderNo(orderNo);
 
-        int count = orderMapper.insert(order);
-        Order saveOrder = null;
+        int count = orderMapper.insert(orderDomain);
+        Order saveOrderDomain = null;
         if(count>0){
-            saveOrder = new LambdaQueryChainWrapper<>(this.baseMapper)
+            saveOrderDomain = new LambdaQueryChainWrapper<>(this.baseMapper)
                     .eq(Order::getOrderNo, orderNo).one();
         }
 
         wmsService.deduct(commodityCode, orderCount);
 
-        return saveOrder!=null ? OrderMapping.INSTANCE.toVo(saveOrder) : null;
+        return saveOrderDomain !=null ? OrderMapping.INSTANCE.toVo(saveOrderDomain) : null;
     }
 
     @Override
@@ -93,4 +108,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         log.info("cancelOrder ...");
         return null;
     }
+
+    private long undoLogCount(){
+        return new LambdaQueryChainWrapper<>(undoLogMapper).count();
+    }
+
 }
