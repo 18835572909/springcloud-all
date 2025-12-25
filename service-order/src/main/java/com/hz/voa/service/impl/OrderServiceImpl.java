@@ -10,6 +10,7 @@ import com.hz.voa.feign.WmsService;
 import com.hz.voa.mapper.OrderMapper;
 import com.hz.voa.service.OrderService;
 import com.hz.voa.transform.OrderMapping;
+import io.seata.core.context.RootContext;
 import io.seata.rm.tcc.api.TwoPhaseBusinessAction;
 import io.seata.spring.annotation.GlobalTransactional;
 import lombok.extern.slf4j.Slf4j;
@@ -49,7 +50,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         String orderNo = IdUtil.fastSimpleUUID();
         orderDomain.setOrderNo(orderNo);
 
-        log.info("[order插入前] undo_log.count:{} ",undoLogCount());
+        String xid = RootContext.getXID();
+
+        log.info("[order插入前] xid:{}, undo_log.count:{} ", xid, undoLogCount());
 
         int count = orderMapper.insert(orderDomain);
         Order saveOrderDomain = null;
@@ -58,12 +61,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
                     .eq(Order::getOrderNo, orderNo).one();
         }
 
-        log.info("[order插入后] undo_log.count:{} ",undoLogCount());
+        log.info("[order插入后] xid:{}, undo_log.count:{} ", xid, undoLogCount());
 
         // 这里设计异常，测试当前服务的回滚
         wmsService.deduct(commodityCode, orderCount);
 
-        log.info("[wms执行后] undo_log.count:{} ",undoLogCount());
+        log.info("[wms执行后] xid:{}, undo_log.count:{} ", xid, undoLogCount());
 
         if (orderCount==8){
             throw new RuntimeException("主动异常：全局回滚");

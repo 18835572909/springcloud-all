@@ -1,5 +1,6 @@
 package com.hz.voa;
 
+import io.seata.spring.annotation.datasource.EnableAutoDataSourceProxy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -13,6 +14,7 @@ import org.springframework.core.env.Environment;
  * @date 2025/12/23 11:38
  **/
 @Slf4j
+@EnableAutoDataSourceProxy
 @SpringBootApplication
 public class WmsApplication implements CommandLineRunner {
 
