@@ -9,6 +9,7 @@ import com.hz.voa.pojo.OrderVO;
 import com.hz.voa.feign.WmsService;
 import com.hz.voa.mapper.OrderMapper;
 import com.hz.voa.service.OrderService;
+import com.hz.voa.service.TccOrderService;
 import com.hz.voa.transform.OrderMapping;
 import io.seata.core.context.RootContext;
 import io.seata.rm.tcc.api.TwoPhaseBusinessAction;
@@ -37,6 +38,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     @Resource
     UndoLogMapper undoLogMapper;
 
+    @Resource
+    TccOrderService tccOrderService;
+
     @Override
     @GlobalTransactional(rollbackFor = Exception.class)
     public OrderVO create(String userId, String commodityCode, int orderCount) {
@@ -64,7 +68,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         log.info("[order插入后] xid:{}, undo_log.count:{} ", xid, undoLogCount());
 
         // 这里设计异常，测试当前服务的回滚
-        wmsService.deduct(commodityCode, orderCount);
+        wmsService.addRecord(commodityCode, orderCount);
 
         log.info("[wms执行后] xid:{}, undo_log.count:{} ", xid, undoLogCount());
 
@@ -75,41 +79,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         return saveOrderDomain !=null ? OrderMapping.INSTANCE.toVo(saveOrderDomain) : null;
     }
 
-    @TwoPhaseBusinessAction(name = "tryOrder", commitMethod = "confirmOrder", rollbackMethod = "cancelOrder")
+    @GlobalTransactional(rollbackFor = Exception.class)
     @Override
-    public OrderVO tryCreate(String userId, String commodityCode, int orderCount) {
-        Order orderDomain = new Order();
-        orderDomain.setUserId(userId);
-        orderDomain.setItemId(commodityCode);
-        orderDomain.setNum(orderCount);
-        orderDomain.setPrice(new BigDecimal(50));
-        orderDomain.setCouponPrice(new BigDecimal(2));
-        orderDomain.setTotalPrice(orderDomain.getPrice().multiply(new BigDecimal(orderDomain.getNum())).subtract(orderDomain.getCouponPrice()));
-        String orderNo = IdUtil.fastSimpleUUID();
-        orderDomain.setOrderNo(orderNo);
-
-        int count = orderMapper.insert(orderDomain);
-        Order saveOrderDomain = null;
-        if(count>0){
-            saveOrderDomain = new LambdaQueryChainWrapper<>(this.baseMapper)
-                    .eq(Order::getOrderNo, orderNo).one();
-        }
-
-        wmsService.deduct(commodityCode, orderCount);
-
-        return saveOrderDomain !=null ? OrderMapping.INSTANCE.toVo(saveOrderDomain) : null;
-    }
-
-    @Override
-    public OrderVO confirmOrder(String userId, String commodityCode, int orderCount) {
-        log.info("confirmOrder ...");
-        return null;
-    }
-
-    @Override
-    public OrderVO cancelOrder(String userId, String commodityCode, int orderCount) {
-        log.info("cancelOrder ...");
-        return null;
+    public OrderVO tryCreateOrder(String userId, String commodityCode, int orderCount) {
+        OrderVO orderVO = tccOrderService.tryCreateOrder(userId, commodityCode, orderCount);
+        wmsService.tryAddRecord(commodityCode, orderCount);
+        return orderVO;
     }
 
     private long undoLogCount(){

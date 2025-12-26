@@ -1,7 +1,7 @@
 package com.hz.voa.ctrl;
 
 import com.hz.voa.api.WmsApi;
-import com.hz.voa.service.StockService;
+import com.hz.voa.service.AccountService;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
@@ -15,11 +15,16 @@ import javax.annotation.Resource;
 public class WmsCtrl implements WmsApi {
 
     @Resource
-    StockService stockService;
+    AccountService accountService;
 
     @Override
     public void deduct(String commodityCode, int count) {
-        stockService.deduct(commodityCode, count);
+        accountService.add(commodityCode, count);
+    }
+
+    @Override
+    public void tryDeduct(String commodityCode, int count) {
+        accountService.tryAdd(commodityCode, count);
     }
 
 }

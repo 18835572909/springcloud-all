@@ -12,15 +12,7 @@ public interface OrderService {
     /**
      * 创建订单
      */
-
     OrderVO create(String userId, String commodityCode, int orderCount);
 
-    /**
-     * TCC
-     */
-    OrderVO tryCreate(String userId, String commodityCode, int orderCount);
-
-    OrderVO confirmOrder(String userId, String commodityCode, int orderCount);
-
-    OrderVO cancelOrder(String userId, String commodityCode, int orderCount);
+    OrderVO tryCreateOrder(String userId, String commodityCode, int orderCount);
 }

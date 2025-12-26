@@ -11,7 +11,7 @@ seata:
   access-key: seata
   secret-key: SeataSecretKey0c382ef121d778043159209298fd40bf3850a017
   application-id: seata-server
-  enable-auto-data-source-proxy: false    # 是否启用数据源bean的自动代理
+  enable-auto-data-source-proxy: true
   tx-service-group: default_tx_group
   service:
     disable-global-transaction: false

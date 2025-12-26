@@ -1,10 +1,11 @@
 package com.hz.voa.service.impl;
 
 import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
-import com.hz.voa.entity.Stock;
-import com.hz.voa.mapper.StockMapper;
+import com.hz.voa.entity.AccountRecord;
+import com.hz.voa.mapper.AccountMapper;
 import com.hz.voa.mapper.UndoLogMapper;
-import com.hz.voa.service.StockService;
+import com.hz.voa.service.AccountService;
+import com.hz.voa.service.TccAccountService;
 import io.seata.core.context.RootContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,32 +20,45 @@ import javax.annotation.Resource;
  **/
 @Slf4j
 @Service
-public class StockServiceImpl implements StockService {
+@SuppressWarnings("all")
+public class AccountServiceImpl implements AccountService {
 
     @Resource
-    StockMapper stockMapper;
+    AccountMapper accountMapper;
 
     @Resource
     UndoLogMapper undoLogMapper;
 
-    //@Transactional(rollbackFor = Exception.class)
+    @Resource
+    TccAccountService tccAccountService;
+
+    @Transactional(rollbackFor = Exception.class)
     @Override
-    public void deduct(String commodityCode, int count) {
+    public void add(String commodityCode, int count) {
         String xid = RootContext.getXID();
         boolean inGlobalTransaction = RootContext.inGlobalTransaction();
         log.info("[order插入前] xid:{}, inGlobalTransaction:{}, undo_log.count:{} ", xid, inGlobalTransaction, undoLogCount());
         // 库存扣减占用，使用中间态标识
         if(count!=10){
-            Stock stock = new Stock();
-            stock.setStatus("PREPARE");
+            AccountRecord stock = new AccountRecord();
+            stock.setStatus("decr");
             stock.setCurrentNum(count);
             stock.setTotal(10);
             stock.setItemId(commodityCode);
-            stockMapper.insert(stock);
+            accountMapper.insert(stock);
             log.info("库存扣减成功");
         }else {
             throw new RuntimeException("主动抛出！！！");
         }
+        log.info("[order插入后] xid:{}, undo_log.count:{} ", xid, undoLogCount());
+    }
+
+    @Override
+    public void tryAdd(String commodityCode, int count) {
+        String xid = RootContext.getXID();
+        boolean inGlobalTransaction = RootContext.inGlobalTransaction();
+        log.info("[order插入前] xid:{}, inGlobalTransaction:{}, undo_log.count:{} ", xid, inGlobalTransaction, undoLogCount());
+        tccAccountService.tryDeduct(commodityCode, count);
         log.info("[order插入后] xid:{}, undo_log.count:{} ", xid, undoLogCount());
     }
 

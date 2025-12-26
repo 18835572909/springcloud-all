@@ -2,7 +2,7 @@ package com.hz.voa.ctrl;
 
 import com.hz.voa.api.OrderApi;
 import com.hz.voa.pojo.OrderVO;
-import com.hz.voa.pojo.OrderRequest;
+import com.hz.voa.pojo.CreateOrderRequest;
 import com.hz.voa.service.OrderService;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,13 +20,13 @@ public class OrderCtrl implements OrderApi {
     OrderService orderService;
 
     @Override
-    public OrderVO create(OrderRequest request) {
+    public OrderVO create(CreateOrderRequest request) {
         return orderService.create(request.getUserId(), request.getCommodityCode(), request.getOrderCount());
     }
 
     @Override
-    public OrderVO tryCreate(OrderRequest request) {
-        return orderService.tryCreate(request.getUserId(), request.getCommodityCode(), request.getOrderCount());
+    public OrderVO tryCreate(CreateOrderRequest request) {
+        return orderService.tryCreateOrder(request.getUserId(), request.getCommodityCode(), request.getOrderCount());
     }
 
 }

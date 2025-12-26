@@ -8,7 +8,7 @@ import lombok.Data;
  * @date 2025/12/23 18:33
  **/
 @Data
-public class OrderRequest {
+public class CreateOrderRequest {
     private String userId;
     private String commodityCode;
     private int orderCount;

@@ -8,7 +8,7 @@ import lombok.Data;
  * @date 2025/12/23 16:03
  **/
 @Data
-public class Stock {
+public class AccountRecord {
 
     private Long id;
 

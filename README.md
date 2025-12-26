@@ -92,7 +92,7 @@ public class OrderApplication {
 
 ##### AT中常见FAQ
 
-1. 启动不成功： (-.-)  一言难尽，多是版本冲突或者seata配置错误）
+1. 启动不成功：  一言难尽，多是版本冲突或者seata配置错误 (-.-)
 
 2. 全局事务不生效
    - 异常类型没有指定，抛出的异常没有触发回滚
@@ -101,3 +101,33 @@ public class OrderApplication {
      - 使用hystrix会导致xid不传递: hystrix使用线程组，ThreadLocal通病--子线程丢失参数（这种情况度娘会教你，太啰嗦）
    - xid传递成功，但是被调用方还是没有回滚
      - 检测是否开启数据源代理，保证seata正常代理
+
+#### TCC模式试用
+
+1. 在TM段使用@GlobalTransaction，标识seata全局事务管理
+
+2. 基于面向接口编程的思想，定义TCC不同阶段要执行的方法：@LocalTCC、@TwoPhaseBusinessAction
+
+3. seata支持的处理TCC常见3大问题：
+   - @TwoPhaseBusinessAction(useTCCFence = true)
+   - 在不同业务库，添加表：tcc_fence_log
+     ```sql
+      CREATE TABLE IF NOT EXISTS `tcc_fence_log`
+      (
+      `xid`           VARCHAR(128)  NOT NULL COMMENT 'global id',
+      `branch_id`     BIGINT        NOT NULL COMMENT 'branch id',
+      `action_name`   VARCHAR(64)   NOT NULL COMMENT 'action name',
+      `status`        TINYINT       NOT NULL COMMENT 'status(tried:1;committed:2;rollbacked:3;suspended:4)',
+      `gmt_create`    DATETIME(3)   NOT NULL COMMENT 'create time',
+      `gmt_modified`  DATETIME(3)   NOT NULL COMMENT 'update time',
+      PRIMARY KEY (`xid`, `branch_id`),
+      KEY `idx_gmt_modified` (`gmt_modified`),
+      KEY `idx_status` (`status`)
+      ) ENGINE = InnoDB
+      DEFAULT CHARSET = utf8mb4;
+     ```
+   
+4. 简述TCC三大常见问题（[seata处理TCC常见问题](https://seata.apache.org/zh-cn/blog/seata-tcc-fence)）
+   - 幂等：针对网络超时等其他因素导致 ‘TC’ 没有收到分支事务响应触发重试场景。避免重复执行代码
+   - 空回滚：针对 ‘try’ 阶段，RM_1执行成功，RM_2异常没有执行 => ‘callback’ 阶段：RM_1执行回滚后，RM_2也执行回滚，这时RM_2会执行空回滚，eg：账户本来没有扣除，但是现在要执行增加，导致数据错误
+   - 事务悬挂：类似空回滚情况，‘try’ 阶段RM_2只是超时但是收到了请求阻塞，在 ’callback‘ 阶段后，RM_2的执行 ‘try’ 操作，但是事务没有后续，导致事务悬挂
