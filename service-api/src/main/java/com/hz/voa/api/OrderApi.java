@@ -2,6 +2,7 @@ package com.hz.voa.api;
 
 import com.hz.voa.pojo.OrderVO;
 import com.hz.voa.pojo.CreateOrderRequest;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -17,5 +18,8 @@ public interface OrderApi {
 
     @PostMapping("order/try/create")
     OrderVO tryCreate(@RequestBody CreateOrderRequest request);
+
+    @GetMapping("order/mock")
+    String mock(String param);
 
 }

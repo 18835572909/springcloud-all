@@ -29,4 +29,9 @@ public class OrderCtrl implements OrderApi {
         return orderService.tryCreateOrder(request.getUserId(), request.getCommodityCode(), request.getOrderCount());
     }
 
+    @Override
+    public String mock(String param) {
+        return "order_service: "+param;
+    }
+
 }

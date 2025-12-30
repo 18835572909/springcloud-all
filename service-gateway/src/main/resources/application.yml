@@ -13,5 +13,15 @@ spring:
           predicates: # 路由断言（匹配请求条件）
             - Path=/order/** # 匹配以 /api/ 开头的路径
           filters: # 路由过滤器（请求/响应处理）
-            - StripPrefix=1 # 去除路径前缀（如 /api/user → /user）
+            - StripPrefix=0   # 去除路径前缀数量（如 /api/user → /user）
             - AddRequestHeader=X-From-Gateway, true # 添加请求头
+
+        - id: wms-service # 路由 ID（唯一）
+            #uri: http://localhost:8081 # 目标服务地址（可替换为 lb://service-name 实现负载均衡）
+          uri: lb://service-wms
+          predicates: # 路由断言（匹配请求条件）
+            - Path=/wms/** # 匹配以 /api/ 开头的路径
+          filters: # 路由过滤器（请求/响应处理）
+            - StripPrefix=0   # 去除路径前缀数量（如 /api/user → /user）
+            - AddRequestHeader=X-From-Gateway, true # 添加请求头
+

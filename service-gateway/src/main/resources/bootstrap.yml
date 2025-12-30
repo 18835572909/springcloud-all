@@ -1,0 +1,24 @@
+spring:
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848  # Nacos服务地址
+        namespace: 1545d8fb-aaa6-43c7-bdf9-1db0ae11d8b4        # 命名空间
+        group: DEFAULT_GROUP        # 分组
+        cluster-name: ${spring.application.name}      # 集群名
+        metadata: # 元数据
+          version: v1
+          environment: dev
+        username: nacos
+        password: nacos
+      config:
+        server-addr: localhost:8848
+        username: ${spring.cloud.nacos.discovery.username}
+        password: ${spring.cloud.nacos.discovery.password}
+        file-extension: yml
+        namespace: fb8f1866-cf38-46a8-907f-c5964e9b6e9d
+        group: DEFAULT_GROUP
+        shared-configs:
+          - data-id: web-config.yml
+            group: DEFAULT_GROUP
+            refresh: true

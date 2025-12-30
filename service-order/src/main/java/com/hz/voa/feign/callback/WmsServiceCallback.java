@@ -29,4 +29,9 @@ public class WmsServiceCallback implements WmsService {
         throw new RuntimeException("服务异常");
     }
 
+    @Override
+    public String mock(String param) {
+        return "";
+    }
+
 }

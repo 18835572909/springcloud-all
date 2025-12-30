@@ -1,9 +1,7 @@
 package com.hz.voa.api;
 
 
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * 
@@ -18,4 +16,6 @@ public interface WmsApi {
     @RequestMapping(value = "/wms/stock/tryAddRecord",method = RequestMethod.GET)
     void tryAddRecord(@RequestParam("commodityCode") String commodityCode, @RequestParam("count") int count);
 
+    @GetMapping("/wms/mock")
+    String mock(String param);
 }

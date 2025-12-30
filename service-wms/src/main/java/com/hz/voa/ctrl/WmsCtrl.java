@@ -18,13 +18,18 @@ public class WmsCtrl implements WmsApi {
     AccountService accountService;
 
     @Override
-    public void deduct(String commodityCode, int count) {
+    public void addRecord(String commodityCode, int count) {
         accountService.add(commodityCode, count);
     }
 
     @Override
-    public void tryDeduct(String commodityCode, int count) {
+    public void tryAddRecord(String commodityCode, int count) {
         accountService.tryAdd(commodityCode, count);
+    }
+
+    @Override
+    public String mock(String param) {
+        return "wms_service: " + param;
     }
 
 }
