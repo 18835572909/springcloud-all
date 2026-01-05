@@ -16,7 +16,7 @@ spring:
         username: ${spring.cloud.nacos.discovery.username}
         password: ${spring.cloud.nacos.discovery.password}
         file-extension: yml
-        namespace: fb8f1866-cf38-46a8-907f-c5964e9b6e9d
+        namespace: 1545d8fb-aaa6-43c7-bdf9-1db0ae11d8b4
         group: DEFAULT_GROUP
         shared-configs:
           - data-id: web-config.yml
